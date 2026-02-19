@@ -356,6 +356,103 @@ Deno.serve(async (req) => {
         return json({ success: true });
       }
 
+      // ══════════════════════════════
+      // EXPORT
+      // ══════════════════════════════
+      case "export_students": {
+        await requireAdminOrGuru();
+        const { data, error: e } = await admin
+          .from("students")
+          .select("*, class_students(classes(name))")
+          .order("full_name");
+        if (e) throw e;
+        const rows = (data ?? []).map((s: any) => ({
+          nama_lengkap: s.full_name,
+          nisn: s.nisn,
+          tempat_lahir: s.birth_place,
+          tanggal_lahir: s.birth_date ?? "",
+          jenis_kelamin: s.gender,
+          alamat: s.address,
+          nama_orang_tua: s.parent_name,
+          hp_orang_tua: s.parent_phone,
+          tahun_masuk: s.enrollment_year ?? "",
+          status: s.status,
+          kelas: (s.class_students ?? []).map((cs: any) => cs.classes?.name).filter(Boolean).join("; "),
+        }));
+        return json({ rows });
+      }
+
+      case "export_teachers": {
+        await requireAdminOrGuru();
+        const { data, error: e } = await admin
+          .from("teachers")
+          .select("*")
+          .order("full_name");
+        if (e) throw e;
+        const rows = (data ?? []).map((t: any) => ({
+          nama_lengkap: t.full_name,
+          nip: t.nip,
+          mata_pelajaran: t.subject,
+          pendidikan: t.education,
+          no_hp: t.phone,
+          jabatan: t.position,
+          status: t.status,
+        }));
+        return json({ rows });
+      }
+
+      // ══════════════════════════════
+      // IMPORT
+      // ══════════════════════════════
+      case "import_students": {
+        await requireAdmin();
+        const { rows } = body as { rows: any[] };
+        if (!rows || !Array.isArray(rows) || rows.length === 0) return err("No data to import");
+        if (rows.length > 500) return err("Maksimal 500 baris per import");
+
+        const toInsert = rows.map((r: any) => ({
+          full_name: String(r.nama_lengkap ?? "").trim(),
+          nisn: String(r.nisn ?? "").trim(),
+          birth_place: String(r.tempat_lahir ?? "").trim(),
+          birth_date: r.tanggal_lahir ? String(r.tanggal_lahir).trim() : null,
+          gender: String(r.jenis_kelamin ?? "").trim(),
+          address: String(r.alamat ?? "").trim(),
+          parent_name: String(r.nama_orang_tua ?? "").trim(),
+          parent_phone: String(r.hp_orang_tua ?? "").trim(),
+          enrollment_year: r.tahun_masuk ? parseInt(String(r.tahun_masuk)) || null : null,
+          status: String(r.status ?? "aktif").trim().toLowerCase(),
+        })).filter((r: any) => r.full_name);
+
+        if (toInsert.length === 0) return err("Tidak ada data valid (kolom nama_lengkap wajib diisi)");
+
+        const { data, error: e } = await admin.from("students").insert(toInsert).select();
+        if (e) throw e;
+        return json({ imported: data?.length ?? 0 });
+      }
+
+      case "import_teachers": {
+        await requireAdmin();
+        const { rows } = body as { rows: any[] };
+        if (!rows || !Array.isArray(rows) || rows.length === 0) return err("No data to import");
+        if (rows.length > 500) return err("Maksimal 500 baris per import");
+
+        const toInsert = rows.map((r: any) => ({
+          full_name: String(r.nama_lengkap ?? "").trim(),
+          nip: String(r.nip ?? "").trim(),
+          subject: String(r.mata_pelajaran ?? "").trim(),
+          education: String(r.pendidikan ?? "").trim(),
+          phone: String(r.no_hp ?? "").trim(),
+          position: String(r.jabatan ?? "").trim(),
+          status: String(r.status ?? "aktif").trim().toLowerCase(),
+        })).filter((r: any) => r.full_name);
+
+        if (toInsert.length === 0) return err("Tidak ada data valid (kolom nama_lengkap wajib diisi)");
+
+        const { data, error: e } = await admin.from("teachers").insert(toInsert).select();
+        if (e) throw e;
+        return json({ imported: data?.length ?? 0 });
+      }
+
       default:
         return err(`Unknown action: ${action}`);
     }
