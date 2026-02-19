@@ -6,14 +6,16 @@ import {
   BookOpen,
   ClipboardCheck,
   FileBarChart,
+  ShieldCheck,
   Menu,
   X,
   GraduationCap,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useRBAC";
 
-const navItems = [
+const baseNavItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/courses", label: "Mata Pelajaran", icon: BookOpen },
   { to: "/assessment", label: "Asesmen", icon: ClipboardCheck },
@@ -24,6 +26,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { profile, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
+
+  const navItems = isAdmin
+    ? [...baseNavItems, { to: "/admin", label: "Admin", icon: ShieldCheck }]
+    : baseNavItems;
 
   return (
     <div className="flex min-h-screen">
