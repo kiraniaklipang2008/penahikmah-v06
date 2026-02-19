@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      class_students: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          academic_year: string
+          created_at: string
+          homeroom_teacher_id: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          created_at?: string
+          homeroom_teacher_id?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          created_at?: string
+          homeroom_teacher_id?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_homeroom_teacher_id_fkey"
+            columns: ["homeroom_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           completed_at: string
@@ -301,6 +372,57 @@ export type Database = {
           },
         ]
       }
+      students: {
+        Row: {
+          address: string
+          birth_date: string | null
+          birth_place: string
+          created_at: string
+          enrollment_year: number | null
+          full_name: string
+          gender: string
+          id: string
+          nisn: string
+          parent_name: string
+          parent_phone: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string
+          birth_date?: string | null
+          birth_place?: string
+          created_at?: string
+          enrollment_year?: number | null
+          full_name: string
+          gender?: string
+          id?: string
+          nisn?: string
+          parent_name?: string
+          parent_phone?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string
+          birth_date?: string | null
+          birth_place?: string
+          created_at?: string
+          enrollment_year?: number | null
+          full_name?: string
+          gender?: string
+          id?: string
+          nisn?: string
+          parent_name?: string
+          parent_phone?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subjects: {
         Row: {
           color: string
@@ -328,6 +450,48 @@ export type Database = {
           id?: string
           name?: string
           order_index?: number
+        }
+        Relationships: []
+      }
+      teachers: {
+        Row: {
+          created_at: string
+          education: string
+          full_name: string
+          id: string
+          nip: string
+          phone: string
+          position: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          education?: string
+          full_name: string
+          id?: string
+          nip?: string
+          phone?: string
+          position?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          education?: string
+          full_name?: string
+          id?: string
+          nip?: string
+          phone?: string
+          position?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

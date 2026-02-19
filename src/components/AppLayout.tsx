@@ -7,6 +7,9 @@ import {
   ClipboardCheck,
   FileBarChart,
   ShieldCheck,
+  Users,
+  UserCheck,
+  School,
   Menu,
   X,
   GraduationCap,
@@ -22,15 +25,24 @@ const baseNavItems = [
   { to: "/report", label: "Raport", icon: FileBarChart },
 ];
 
+const dataNavItems = [
+  { to: "/students", label: "Data Siswa", icon: Users },
+  { to: "/teachers", label: "Data Guru", icon: UserCheck },
+  { to: "/classes", label: "Data Kelas", icon: School },
+];
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { profile, signOut } = useAuth();
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, roles } = useIsAdmin();
+  const isAdminOrGuru = isAdmin || roles.includes("guru");
 
-  const navItems = isAdmin
-    ? [...baseNavItems, { to: "/admin", label: "Admin", icon: ShieldCheck }]
-    : baseNavItems;
+  const navItems = [
+    ...baseNavItems,
+    ...(isAdminOrGuru ? dataNavItems : []),
+    ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
+  ];
 
   return (
     <div className="flex min-h-screen">
