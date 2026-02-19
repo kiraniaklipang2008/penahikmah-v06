@@ -43,9 +43,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <div className="flex h-16 items-center gap-3 px-6">
           <GraduationCap className="h-8 w-8 text-sidebar-primary" />
-          <span className="text-xl font-800 tracking-tight text-sidebar-primary-foreground">
-            EduLMS
-          </span>
+          <div className="leading-tight">
+            <span className="text-sm font-bold tracking-tight text-sidebar-primary-foreground">
+              PKBM Pena Hikmah
+            </span>
+          </div>
         </div>
 
         <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
@@ -105,7 +107,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <h2 className="text-lg font-semibold">
-            {navItems.find((n) => n.to === pathname)?.label ?? "EduLMS"}
+            {navItems.find((n) => n.to === pathname)?.label ?? "PKBM Pena Hikmah"}
           </h2>
         </header>
 
