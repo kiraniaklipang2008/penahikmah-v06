@@ -14,6 +14,73 @@ export type Database = {
   }
   public: {
     Tables: {
+      lesson_progress: {
+        Row: {
+          completed_at: string
+          id: string
+          lesson_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          lesson_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          lesson_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          content: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          order_index: number
+          subject_id: string
+          title: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          order_index?: number
+          subject_id: string
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          order_index?: number
+          subject_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -41,6 +108,36 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          color: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          order_index: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name: string
+          order_index?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          order_index?: number
         }
         Relationships: []
       }
