@@ -1,97 +1,221 @@
-import { Download } from "lucide-react";
+import { Loader2, BarChart3, BookOpen, Trophy } from "lucide-react";
+import { useReport } from "@/hooks/useReport";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
-interface SubjectGrade {
-  subject: string;
-  dailyExam: number;
-  midterm: number;
-  finalExam: number;
-  average: number;
-  grade: string;
-}
-
-const grades: SubjectGrade[] = [
-  { subject: "Matematika", dailyExam: 82, midterm: 85, finalExam: 80, average: 82, grade: "B+" },
-  { subject: "Bahasa Indonesia", dailyExam: 90, midterm: 88, finalExam: 92, average: 90, grade: "A" },
-  { subject: "Fisika", dailyExam: 75, midterm: 78, finalExam: 80, average: 78, grade: "B" },
-  { subject: "Kimia", dailyExam: 70, midterm: 72, finalExam: 68, average: 70, grade: "B-" },
-  { subject: "Sejarah", dailyExam: 88, midterm: 90, finalExam: 85, average: 88, grade: "A-" },
-  { subject: "Bahasa Inggris", dailyExam: 85, midterm: 82, finalExam: 88, average: 85, grade: "B+" },
-];
-
-const overallAverage = Math.round(grades.reduce((s, g) => s + g.average, 0) / grades.length);
-
-function gradeColor(avg: number) {
-  if (avg >= 85) return "text-success";
-  if (avg >= 75) return "text-primary";
-  if (avg >= 65) return "text-warning";
-  return "text-destructive";
+function gradeLabel(pct: number) {
+  if (pct >= 90) return "A";
+  if (pct >= 80) return "A-";
+  if (pct >= 70) return "B+";
+  if (pct >= 60) return "B";
+  if (pct >= 50) return "C";
+  return "D";
 }
 
 export default function Report() {
+  const { profile } = useAuth();
+  const { data, isLoading } = useReport();
+
+  const chartData =
+    data?.subjects.map((s) => ({
+      name: s.name.length > 12 ? s.name.slice(0, 12) + "…" : s.name,
+      "Progres Materi": s.completionPct,
+      "Skor Kuis Terbaik": s.bestQuizScore ?? 0,
+    })) ?? [];
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Raport Online</h1>
-          <p className="mt-1 text-muted-foreground">Semester Ganjil 2025/2026</p>
-        </div>
-        <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-          <Download className="h-4 w-4" />
-          Unduh Raport
-        </button>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold">Raport Online</h1>
+        <p className="mt-1 text-muted-foreground">
+          Ringkasan progres pembelajaran per mata pelajaran
+        </p>
       </div>
 
-      {/* Student Info */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">Nama Siswa</p>
-          <p className="mt-1 text-lg font-semibold">Ahmad Siswa</p>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-        <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">Kelas</p>
-          <p className="mt-1 text-lg font-semibold">10-A</p>
+      ) : !data || data.subjects.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+          <BookOpen className="h-12 w-12 text-muted-foreground/40" />
+          <p className="text-muted-foreground">Belum ada data mata pelajaran.</p>
         </div>
-        <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">Rata-rata</p>
-          <p className={`mt-1 text-3xl font-bold ${gradeColor(overallAverage)}`}>{overallAverage}</p>
-        </div>
-      </div>
+      ) : (
+        <>
+          {/* Summary Cards */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <p className="text-sm text-muted-foreground">Nama Siswa</p>
+              <p className="mt-1 text-lg font-semibold">
+                {profile?.full_name || "—"}
+              </p>
+            </div>
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <p className="text-sm text-muted-foreground">Kelas</p>
+              <p className="mt-1 text-lg font-semibold">
+                {profile?.class || "—"}
+              </p>
+            </div>
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <p className="text-sm text-muted-foreground">Progres Keseluruhan</p>
+              <p className="mt-1 text-3xl font-bold text-primary">
+                {data.overallCompletionPct}%
+              </p>
+            </div>
+          </div>
 
-      {/* Grades Table */}
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-semibold">Mata Pelajaran</th>
-                <th className="px-4 py-3 text-center font-semibold">UH</th>
-                <th className="px-4 py-3 text-center font-semibold">UTS</th>
-                <th className="px-4 py-3 text-center font-semibold">UAS</th>
-                <th className="px-4 py-3 text-center font-semibold">Rata-rata</th>
-                <th className="px-4 py-3 text-center font-semibold">Predikat</th>
-              </tr>
-            </thead>
-            <tbody>
-              {grades.map((g) => (
-                <tr key={g.subject} className="border-b last:border-0 transition-colors hover:bg-muted/30">
-                  <td className="px-4 py-3 font-medium">{g.subject}</td>
-                  <td className="px-4 py-3 text-center">{g.dailyExam}</td>
-                  <td className="px-4 py-3 text-center">{g.midterm}</td>
-                  <td className="px-4 py-3 text-center">{g.finalExam}</td>
-                  <td className={`px-4 py-3 text-center font-bold ${gradeColor(g.average)}`}>{g.average}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      g.average >= 85 ? "bg-success/10 text-success" : g.average >= 75 ? "bg-primary/10 text-primary" : "bg-warning/10 text-warning"
-                    }`}>
-                      {g.grade}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          {/* Bar Chart */}
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold">Grafik Progres per Mata Pelajaran</h2>
+            </div>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} barGap={4}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-border"
+                  />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 12 }}
+                    className="fill-muted-foreground"
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 12 }}
+                    className="fill-muted-foreground"
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "0.75rem",
+                      border: "1px solid hsl(var(--border))",
+                      background: "hsl(var(--card))",
+                      color: "hsl(var(--foreground))",
+                    }}
+                    formatter={(value: number) => `${value}%`}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="Progres Materi"
+                    fill="hsl(var(--primary))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="Skor Kuis Terbaik"
+                    fill="hsl(var(--accent))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-3 text-left font-semibold">
+                      Mata Pelajaran
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Materi Selesai
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Progres
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Skor Kuis Terbaik
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Predikat
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.subjects.map((s) => {
+                    const score = s.bestQuizScore;
+                    return (
+                      <tr
+                        key={s.id}
+                        className="border-b last:border-0 transition-colors hover:bg-muted/30"
+                      >
+                        <td className="px-4 py-3 font-medium">{s.name}</td>
+                        <td className="px-4 py-3 text-center">
+                          {s.completedLessons}/{s.totalLessons}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center gap-2 justify-center">
+                            <div className="h-2 w-20 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all"
+                                style={{ width: `${s.completionPct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {s.completionPct}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center font-bold">
+                          {score !== null ? (
+                            <span
+                              className={
+                                score >= 70
+                                  ? "text-success"
+                                  : score >= 50
+                                  ? "text-warning"
+                                  : "text-destructive"
+                              }
+                            >
+                              {score}%
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {score !== null ? (
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                score >= 70
+                                  ? "bg-success/10 text-success"
+                                  : score >= 50
+                                  ? "bg-warning/10 text-warning"
+                                  : "bg-destructive/10 text-destructive"
+                              }`}
+                            >
+                              {gradeLabel(score)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">
+                              Belum ada
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
