@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Loader2, Plus, Pencil, Trash2, Users, Search } from "lucide-react";
-import { useTeachers, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, type Teacher } from "@/hooks/useDataManagement";
+import { useState, useRef } from "react";
+import { Loader2, Plus, Pencil, Trash2, Users, Search, Download, Upload, FileDown } from "lucide-react";
+import { useTeachers, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useExportTeachers, useImportTeachers, type Teacher } from "@/hooks/useDataManagement";
 import { useIsAdmin } from "@/hooks/useRBAC";
 import { toast } from "sonner";
+import { exportToCsv, downloadTemplate, parseCsv, TEACHER_CSV_HEADERS } from "@/lib/csv";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const STATUS_OPTIONS = [
   { value: "aktif", label: "Aktif" },
@@ -110,9 +117,12 @@ export default function Teachers() {
   const createTeacher = useCreateTeacher();
   const updateTeacher = useUpdateTeacher();
   const deleteTeacher = useDeleteTeacher();
+  const exportTeachers = useExportTeachers();
+  const importTeachers = useImportTeachers();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Teacher | undefined>();
   const [search, setSearch] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = (teachers ?? []).filter((t) =>
     t.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -150,6 +160,32 @@ export default function Teachers() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const rows = await exportTeachers.mutateAsync();
+      exportToCsv("data-guru.csv", rows);
+      toast.success("Data guru berhasil di-export");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) { toast.error("File CSV kosong atau format salah"); return; }
+      const count = await importTeachers.mutateAsync(rows);
+      toast.success(`${count} guru berhasil di-import`);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -160,12 +196,34 @@ export default function Teachers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">Data Guru</h1>
           <p className="mt-1 text-muted-foreground">{filtered.length} guru terdaftar</p>
         </div>
-        {isAdmin && (
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />Export / Import
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExport} disabled={exportTeachers.isPending}>
+                <Download className="mr-2 h-4 w-4" />Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => downloadTemplate("template-guru.csv", TEACHER_CSV_HEADERS)}>
+                <FileDown className="mr-2 h-4 w-4" />Download Template
+              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()} disabled={importTeachers.isPending}>
+                  <Upload className="mr-2 h-4 w-4" />Import CSV
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile} />
+          {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditing(undefined); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" />Tambah Guru</Button>
@@ -183,6 +241,7 @@ export default function Teachers() {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </div>
 
       <div className="relative">

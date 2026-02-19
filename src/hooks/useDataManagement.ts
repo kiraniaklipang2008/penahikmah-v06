@@ -10,6 +10,47 @@ async function invokeDataMgmt(action: string, body: Record<string, unknown> = {}
   return data;
 }
 
+// ── Export/Import ──
+export function useExportStudents() {
+  return useMutation({
+    mutationFn: async () => {
+      const data = await invokeDataMgmt("export_students");
+      return data.rows as Record<string, unknown>[];
+    },
+  });
+}
+
+export function useExportTeachers() {
+  return useMutation({
+    mutationFn: async () => {
+      const data = await invokeDataMgmt("export_teachers");
+      return data.rows as Record<string, unknown>[];
+    },
+  });
+}
+
+export function useImportStudents() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rows: Record<string, string>[]) => {
+      const data = await invokeDataMgmt("import_students", { rows });
+      return data.imported as number;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["students"] }),
+  });
+}
+
+export function useImportTeachers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rows: Record<string, string>[]) => {
+      const data = await invokeDataMgmt("import_teachers", { rows });
+      return data.imported as number;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teachers"] }),
+  });
+}
+
 // ── Types ──
 export interface Student {
   id: string;
