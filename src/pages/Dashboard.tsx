@@ -1,5 +1,6 @@
 import { BookOpen, ClipboardCheck, FileBarChart, TrendingUp, Users, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const stats = [
   { label: "Mata Pelajaran", value: "6", icon: BookOpen, color: "text-primary" },
@@ -20,10 +21,13 @@ const upcomingAssessments = [
 ];
 
 export default function Dashboard() {
+  const { profile } = useAuth();
+  const firstName = profile?.full_name?.split(" ")[0] || "User";
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Selamat Datang, Ahmad! 👋</h1>
+        <h1 className="text-2xl font-bold">Selamat Datang, {firstName}! 👋</h1>
         <p className="mt-1 text-muted-foreground">Berikut ringkasan pembelajaran kamu hari ini.</p>
       </div>
 
