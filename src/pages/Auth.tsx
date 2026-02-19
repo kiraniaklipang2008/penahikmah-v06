@@ -49,7 +49,7 @@ export default function Auth() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
             <GraduationCap className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold">EduLMS</h1>
+          <h1 className="mt-4 text-2xl font-bold">PKBM Pena Hikmah</h1>
           <p className="mt-1 text-muted-foreground">
             {isLogin ? "Masuk ke akun kamu" : "Buat akun baru"}
           </p>
