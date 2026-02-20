@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { GraduationCap, Mail, Lock, User, Loader2 } from "lucide-react";
+import { GraduationCap, Mail, Lock, User, Loader2, ShieldCheck, Shield, BookOpen, Users } from "lucide-react";
 import { toast } from "sonner";
+
+const DEMO_ACCOUNTS = [
+  { email: "superadmin@penahikmah.sch.id", password: "SuperAdmin@2026", label: "Super Admin", icon: ShieldCheck, color: "bg-red-500/10 text-red-600 border-red-200" },
+  { email: "admin@penahikmah.sch.id", password: "Admin@2026", label: "Admin", icon: Shield, color: "bg-orange-500/10 text-orange-600 border-orange-200" },
+  { email: "guru@penahikmah.sch.id", password: "Guru@2026", label: "Guru", icon: BookOpen, color: "bg-blue-500/10 text-blue-600 border-blue-200" },
+  { email: "siswa@penahikmah.sch.id", password: "Siswa@2026", label: "Siswa", icon: Users, color: "bg-green-500/10 text-green-600 border-green-200" },
+];
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,8 +17,22 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [demoLoading, setDemoLoading] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const handleDemoLogin = async (email: string, password: string) => {
+    setDemoLoading(email);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Berhasil masuk!");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "Gagal masuk dengan akun demo");
+    } finally {
+      setDemoLoading(null);
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -43,7 +64,7 @@ export default function Auth() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
@@ -53,6 +74,37 @@ export default function Auth() {
           <p className="mt-1 text-muted-foreground">
             {isLogin ? "Masuk ke akun kamu" : "Buat akun baru"}
           </p>
+        </div>
+
+        {/* Demo Login */}
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Demo Login
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {DEMO_ACCOUNTS.map((acc) => (
+              <button
+                key={acc.email}
+                type="button"
+                disabled={!!demoLoading}
+                onClick={() => handleDemoLogin(acc.email, acc.password)}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-50 ${acc.color}`}
+              >
+                {demoLoading === acc.email ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <acc.icon className="h-4 w-4" />
+                )}
+                {acc.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">atau</span>
+          <div className="h-px flex-1 bg-border" />
         </div>
 
         {/* Form */}
