@@ -106,7 +106,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               <div>
                 <p className="text-sm font-semibold text-sidebar-accent-foreground">{profile?.full_name || "User"}</p>
-                <p className="text-xs text-sidebar-muted">{profile?.class || "Siswa"}</p>
+                <p className="text-xs capitalize text-sidebar-muted">
+                  {roles[0]?.replace("_", " ") || profile?.class || "Siswa"}
+                </p>
               </div>
             </div>
             <button onClick={signOut} className="rounded-lg p-2 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors" title="Keluar">
