@@ -30,6 +30,18 @@ const SEED_USERS = [
     full_name: "Administrator",
     role: "admin" as const,
   },
+  {
+    email: "guru@penahikmah.sch.id",
+    password: "Guru@2026",
+    full_name: "Guru Demo",
+    role: "guru" as const,
+  },
+  {
+    email: "siswa@penahikmah.sch.id",
+    password: "Siswa@2026",
+    full_name: "Siswa Demo",
+    role: "siswa" as const,
+  },
 ];
 
 Deno.serve(async (req) => {
@@ -42,20 +54,18 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Check if users already exist — only seed if no users exist
-    const { data: existingRoles } = await admin
-      .from("user_roles")
-      .select("id")
-      .limit(1);
-
-    if (existingRoles && existingRoles.length > 0) {
-      return err("Seed aborted: users already exist. Delete existing users first if you want to re-seed.", 409);
-    }
+    // Seed missing users (skip existing ones)
 
     const results: Array<{ email: string; role: string; status: string }> = [];
 
     for (const seedUser of SEED_USERS) {
-      // Create auth user with email confirmed
+      // Check if this specific user already exists
+      const { data: { users: allUsers } } = await admin.auth.admin.listUsers();
+      const alreadyExists = allUsers?.some((u: any) => u.email === seedUser.email);
+      if (alreadyExists) {
+        results.push({ email: seedUser.email, role: seedUser.role, status: "Already exists, skipped" });
+        continue;
+      }
       const { data: authData, error: authError } = await admin.auth.admin.createUser({
         email: seedUser.email,
         password: seedUser.password,
