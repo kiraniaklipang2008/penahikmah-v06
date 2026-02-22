@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calculator, Zap, FlaskConical, Leaf, BookText, Globe, BookOpen,
-  Clock, ChevronRight, CheckCircle2, XCircle, Trophy, RotateCcw, Loader2, ArrowLeft,
+  Clock, ChevronRight, CheckCircle2, XCircle, Trophy, RotateCcw, Loader2, ArrowLeft, MessageSquare,
 } from "lucide-react";
 import { useAssessment, useSubmitQuiz, type Quiz, type Question } from "@/hooks/useAssessment";
+import { useMyFeedbacks } from "@/hooks/useQuizFeedback";
+import { useIsAdmin } from "@/hooks/useRBAC";
+import MentorFeedbackPanel from "@/components/assessment/MentorFeedbackPanel";
 import { toast } from "sonner";
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -21,7 +24,7 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 // ─── Quiz Card ────────────────────────────────────────────────────────────────
-function QuizCard({ quiz, onStart }: { quiz: Quiz; onStart: () => void }) {
+function QuizCard({ quiz, feedback, onStart }: { quiz: Quiz; feedback?: { comment: string; adjusted_score: number | null } | null; onStart: () => void }) {
   const Icon = ICON_MAP[quiz.subject_icon] ?? BookOpen;
   const hsl = COLOR_MAP[quiz.subject_color] ?? COLOR_MAP.blue;
   const hasBest = quiz.bestScore !== null;
@@ -66,6 +69,22 @@ function QuizCard({ quiz, onStart }: { quiz: Quiz; onStart: () => void }) {
             >
               {quiz.bestScore}%
             </span>
+          </div>
+        )}
+
+        {/* Mentor Feedback */}
+        {feedback && feedback.comment && (
+          <div className="rounded-lg bg-primary/5 border border-primary/10 p-2.5 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <MessageSquare className="h-3 w-3" />
+              Feedback Mentor
+            </div>
+            <p className="text-xs text-muted-foreground italic leading-relaxed">"{feedback.comment}"</p>
+            {feedback.adjusted_score !== null && (
+              <p className="text-xs text-primary font-medium">
+                Nilai manual: {Math.round((feedback.adjusted_score / quiz.totalQuestions) * 100)}%
+              </p>
+            )}
           </div>
         )}
 
@@ -306,15 +325,20 @@ function ResultScreen({
 
 // ─── Main Assessment Page ─────────────────────────────────────────────────────
 type Screen = "list" | "quiz" | "result";
+type Tab = "kuis" | "feedback";
 
 export default function Assessment() {
   const { data: quizzes, isLoading } = useAssessment();
+  const { data: feedbackMap } = useMyFeedbacks();
+  const { isAdmin, roles } = useIsAdmin();
+  const isGuru = isAdmin || roles.includes("guru");
   const submitQuiz = useSubmitQuiz();
 
+  const [tab, setTab] = useState<Tab>("kuis");
   const [screen, setScreen] = useState<Screen>("list");
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [finalScore, setFinalScore] = useState(0);
-  const [quizKey, setQuizKey] = useState(0); // forces quiz reset on retry
+  const [quizKey, setQuizKey] = useState(0);
 
   const handleStart = (quiz: Quiz) => {
     setActiveQuiz(quiz);
@@ -349,20 +373,64 @@ export default function Assessment() {
     );
   }
 
+  // Find feedback for quiz by matching quiz_result
+  const getQuizFeedback = (quizId: string) => {
+    if (!feedbackMap) return null;
+    // feedbackMap is keyed by quiz_result_id, we need to find matching
+    for (const fb of Object.values(feedbackMap)) {
+      // We don't have quiz_id in feedback directly, skip for now
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header (only on list screen) */}
       {screen === "list" && (
-        <div>
-          <h1 className="text-2xl font-bold">Asesmen</h1>
-          <p className="mt-1 text-muted-foreground">
-            Pilih kuis untuk menguji pemahaman kamu per mata pelajaran.
-          </p>
-        </div>
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Asesmen</h1>
+              <p className="mt-1 text-muted-foreground">
+                {isGuru
+                  ? "Kelola kuis dan berikan feedback untuk siswa."
+                  : "Pilih kuis untuk menguji pemahaman kamu per mata pelajaran."}
+              </p>
+            </div>
+          </div>
+
+          {/* Tabs for guru/admin */}
+          {isGuru && (
+            <div className="flex gap-1 rounded-lg bg-muted p-1 w-fit">
+              <button
+                onClick={() => setTab("kuis")}
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                  tab === "kuis" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Daftar Kuis
+              </button>
+              <button
+                onClick={() => setTab("feedback")}
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  tab === "feedback" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                Feedback Mentor
+              </button>
+            </div>
+          )}
+        </>
       )}
 
+      {/* Mentor feedback tab */}
+      {screen === "list" && tab === "feedback" && isGuru && (
+        <MentorFeedbackPanel />
+      )}
+
+      {/* Quiz list / runner / result */}
       <AnimatePresence mode="wait">
-        {screen === "list" && (
+        {screen === "list" && tab === "kuis" && (
           <motion.div
             key="list"
             initial={{ opacity: 0 }}
