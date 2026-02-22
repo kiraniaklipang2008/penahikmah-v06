@@ -261,6 +261,59 @@ Deno.serve(async (req) => {
         return json({ allowed: !!data });
       }
 
+      // ── Get all quiz results for feedback (guru/admin) ──
+      case "get_quiz_results_for_feedback": {
+        const roles = await callerRoles();
+        if (!roles.includes("super_admin") && !roles.includes("admin") && !roles.includes("guru")) {
+          return err("Forbidden", 403);
+        }
+
+        const { data: results, error: qrErr } = await admin
+          .from("quiz_results")
+          .select("id, quiz_id, user_id, score, total_questions, completed_at")
+          .order("completed_at", { ascending: false });
+        if (qrErr) throw qrErr;
+
+        // Get profiles for student names
+        const { data: profiles } = await admin
+          .from("profiles")
+          .select("user_id, full_name");
+        const nameMap: Record<string, string> = {};
+        for (const p of profiles ?? []) nameMap[p.user_id] = p.full_name;
+
+        // Get quiz info
+        const { data: quizzes } = await admin
+          .from("quizzes")
+          .select("id, title, subject_id, subjects(name)");
+        const quizMap: Record<string, { title: string; subject_name: string }> = {};
+        for (const q of quizzes ?? []) {
+          quizMap[q.id] = { title: q.title, subject_name: (q as any).subjects?.name ?? "" };
+        }
+
+        // Get existing feedback
+        const resultIds = (results ?? []).map((r: any) => r.id);
+        let feedbackMap: Record<string, any> = {};
+        if (resultIds.length > 0) {
+          const { data: feedbacks } = await admin
+            .from("quiz_feedback")
+            .select("*")
+            .in("quiz_result_id", resultIds);
+          for (const fb of feedbacks ?? []) {
+            feedbackMap[fb.quiz_result_id] = fb;
+          }
+        }
+
+        const mapped = (results ?? []).map((r: any) => ({
+          ...r,
+          student_name: nameMap[r.user_id] ?? "Unknown",
+          quiz_title: quizMap[r.quiz_id]?.title ?? "",
+          subject_name: quizMap[r.quiz_id]?.subject_name ?? "",
+          feedback: feedbackMap[r.id] ?? null,
+        }));
+
+        return json({ results: mapped });
+      }
+
       default:
         return err(`Unknown action: ${action}`);
     }

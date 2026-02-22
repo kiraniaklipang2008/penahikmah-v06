@@ -246,6 +246,44 @@ export type Database = {
           },
         ]
       }
+      quiz_feedback: {
+        Row: {
+          adjusted_score: number | null
+          comment: string
+          created_at: string
+          id: string
+          mentor_id: string
+          quiz_result_id: string
+          updated_at: string
+        }
+        Insert: {
+          adjusted_score?: number | null
+          comment?: string
+          created_at?: string
+          id?: string
+          mentor_id: string
+          quiz_result_id: string
+          updated_at?: string
+        }
+        Update: {
+          adjusted_score?: number | null
+          comment?: string
+          created_at?: string
+          id?: string
+          mentor_id?: string
+          quiz_result_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_feedback_quiz_result_id_fkey"
+            columns: ["quiz_result_id"]
+            isOneToOne: true
+            referencedRelation: "quiz_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_results: {
         Row: {
           completed_at: string
